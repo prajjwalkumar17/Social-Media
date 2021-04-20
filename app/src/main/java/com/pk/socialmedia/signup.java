@@ -31,6 +31,7 @@ public class signup extends AppCompatActivity {
     private static final String TAG = "GoogleActivity";
     private static final int RC_SIGN_IN = 9001;
     GoogleSignInClient mGoogleSignInClient;
+
     static String namet, photoUri, accountt;
 
 
@@ -94,7 +95,9 @@ public class signup extends AppCompatActivity {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 assert account != null;
                 Intent intent= new Intent(getApplicationContext(),Home.class);
-
+                String keyIdentifer  = null;
+                i.putExtra(strName, keyIdentifer );
+                
                 photoUri = account.getPhotoUrl().toString();
                 namet = account.getDisplayName();
                 accountt = account.getEmail();
