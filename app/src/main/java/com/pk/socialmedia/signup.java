@@ -16,10 +16,8 @@ import com.facebook.AccessTokenTracker;
 import com.facebook.CallbackManager;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
-import com.facebook.appevents.AppEventsLogger;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
@@ -33,16 +31,15 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FacebookAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
-import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 public class signup extends AppCompatActivity {
     private static final String EMAIL = "email";
@@ -51,7 +48,6 @@ public class signup extends AppCompatActivity {
     private static final String TAG = "GoogleActivity";
     private static final int RC_SIGN_IN = 9001;
     GoogleSignInClient mGoogleSignInClient;
-
     static String namet, photoUri, accountt;
     LoginButton fbsign;
     AccessTokenTracker mAccessTokenTracker;
@@ -71,9 +67,7 @@ public class signup extends AppCompatActivity {
         gsign.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                signIn();
-
+                gcccsignIn();
             }
         });
         fbsign.setOnClickListener(new View.OnClickListener() {
@@ -92,7 +86,7 @@ public class signup extends AppCompatActivity {
             @Override
             public void onSuccess(LoginResult loginResult) {
                 Log.d("Demo", "Sucessfull");
-                startActivity(new Intent(getApplicationContext(), Home.class));
+                handelFacebookToken(loginResult.getAccessToken());
             }
 
             @Override
@@ -120,7 +114,7 @@ public class signup extends AppCompatActivity {
     }
 
 
-    private void signIn() {
+    private void gcccsignIn() {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent, RC_SIGN_IN);
     }
@@ -135,13 +129,14 @@ public class signup extends AppCompatActivity {
         GraphRequest graphRequest = GraphRequest.newMeRequest(AccessToken.getCurrentAccessToken(), new GraphRequest.GraphJSONObjectCallback() {
             @Override
             public void onCompleted(JSONObject object, GraphResponse response) {
-                Log.d("Demo", object.toString());
+                Log.d("Demooo", object.toString());
                 try {
                     String fbName = object.getString("name");
-                    String fbImg = object.getString("name");
                     String fbId = object.getString("id");
-                    /*Picasso.get().load("https://graph.facebook.com/"
-                            +fbId+"/picture?type=medium").into();*/
+                    Intent intent = new Intent(signup.this, Home.class);
+                    intent.putExtra("fbName", fbName);
+                    intent.putExtra("fbId", fbId);
+                    startActivity(intent);
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
@@ -155,8 +150,6 @@ public class signup extends AppCompatActivity {
 
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
-
-
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 // Google Sign In was successful, authenticate with Firebase
@@ -165,7 +158,6 @@ public class signup extends AppCompatActivity {
                 Intent intent= new Intent(getApplicationContext(),Home.class);
                 String keyIdentifer  = null;
 //                i.putExtra(strName, keyIdentifer );
-
                 photoUri = account.getPhotoUrl().toString();
                 namet = account.getDisplayName();
                 accountt = account.getEmail();
@@ -195,6 +187,7 @@ public class signup extends AppCompatActivity {
         mAccessTokenTracker.stopTracking();
     }
 
+
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
@@ -211,14 +204,47 @@ public class signup extends AppCompatActivity {
                                 // If sign in fails, display a message to the user.
                                 Log.w(TAG, "signInWithCredential:failure", task.getException());
 //                            updateUI(null);
-                            }
                         }
-                    }).addOnFailureListener(new OnFailureListener() {
-                @Override
-                public void onFailure(@NonNull Exception e) {
-                    Toast.makeText(signup.this,e.getMessage().toString(), Toast.LENGTH_SHORT).show();
-                }
-            });
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Toast.makeText(signup.this, e.getMessage().toString(), Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+
+    private void handelFacebookToken(AccessToken accessToken) {
+        Log.d("Demo", "Handel the token" + accessToken);
+
+        AuthCredential credential = FacebookAuthProvider.getCredential(accessToken.getToken());
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            Log.d("Demo", "Sign in with fb sucessfull");
+                        }
+                    }
+                }).addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+
+            }
+        });
+
+
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (mAuth.getCurrentUser() != null) {
+            startActivity(new Intent(this, Home.class));
+            finish();
+
         }
     }
+}
 
