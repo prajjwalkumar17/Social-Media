@@ -40,13 +40,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class signup extends AppCompatActivity {
     private static final String EMAIL = "email";
     Button gsign;
     FirebaseAuth mAuth;
     private static final String TAG = "GoogleActivity";
-    private static final int RC_SIGN_IN = 9001;
+    private static final int GC_SIGN_IN = 9001;
     GoogleSignInClient mGoogleSignInClient;
     static String namet, photoUri, accountt;
     LoginButton fbsign;
@@ -58,7 +59,6 @@ public class signup extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
-//        FacebookSdk.sdkInitialize(this.getApplicationContext());
         callbackManager = CallbackManager.Factory.create();
         gsign = findViewById(R.id.gsign);
         fbsign = findViewById(R.id.fbsign);
@@ -67,7 +67,8 @@ public class signup extends AppCompatActivity {
         gsign.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                gcccsignIn();
+                gsignin();
+                gcccsignIn(GC_SIGN_IN);
             }
         });
         fbsign.setOnClickListener(new View.OnClickListener() {
@@ -81,7 +82,7 @@ public class signup extends AppCompatActivity {
     }
 
     private void fbsignin() {
-        fbsign.setPermissions(Arrays.asList("user_gender,user_friends,email"));
+        fbsign.setPermissions(Arrays.asList("email"));
         fbsign.registerCallback(callbackManager, new FacebookCallback<LoginResult>() {
             @Override
             public void onSuccess(LoginResult loginResult) {
@@ -109,14 +110,13 @@ public class signup extends AppCompatActivity {
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
                 .build();
-
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
     }
 
 
-    private void gcccsignIn() {
+    private void gcccsignIn(int code) {
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent, RC_SIGN_IN);
+        startActivityForResult(signInIntent, code);
     }
 
 
@@ -133,7 +133,7 @@ public class signup extends AppCompatActivity {
                 try {
                     String fbName = object.getString("name");
                     String fbId = object.getString("id");
-                    Intent intent = new Intent(signup.this, Home.class);
+                    Intent intent = new Intent(signup.this, FbHome.class);
                     intent.putExtra("fbName", fbName);
                     intent.putExtra("fbId", fbId);
                     startActivity(intent);
@@ -143,22 +143,22 @@ public class signup extends AppCompatActivity {
             }
         });
         Bundle bundle = new Bundle();
-        bundle.putString("fields", "gender,email,name,id,first_name,last_name");
+        bundle.putString("fields", "email,name,id,first_name,last_name");
         graphRequest.setParameters(bundle);
         graphRequest.executeAsync();
 
 
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
-        if (requestCode == RC_SIGN_IN) {
+        if (requestCode == GC_SIGN_IN) {
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             try {
                 // Google Sign In was successful, authenticate with Firebase
                 GoogleSignInAccount account = task.getResult(ApiException.class);
                 assert account != null;
-                Intent intent= new Intent(getApplicationContext(),Home.class);
-                String keyIdentifer  = null;
+//                Intent intent= new Intent(getApplicationContext(),GcHome.class);
+                String keyIdentifer = null;
 //                i.putExtra(strName, keyIdentifer );
-                photoUri = account.getPhotoUrl().toString();
+                photoUri = Objects.requireNonNull(account.getPhotoUrl()).toString();
                 namet = account.getDisplayName();
                 accountt = account.getEmail();
 //get ddata from here from google
@@ -181,12 +181,20 @@ public class signup extends AppCompatActivity {
 
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mAccessTokenTracker.stopTracking();
+    /* @Override
+     protected void onDestroy() {
+         super.onDestroy();
+         mAccessTokenTracker.stopTracking();
+     }*/
+    public void signOut() {
+        mGoogleSignInClient.signOut()
+                .addOnCompleteListener(this, new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        // ...
+                    }
+                });
     }
-
 
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
@@ -198,9 +206,12 @@ public class signup extends AppCompatActivity {
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithCredential:success");
                             FirebaseUser user = mAuth.getCurrentUser();
-                            startActivity(new Intent(getApplicationContext(), Home.class));
-//                            updateUI(user);
-                            } else {
+                            Intent intent = new Intent(getApplicationContext(), GcHome.class);
+                            intent.putExtra("gcName", namet);
+                            intent.putExtra("gcEmail", accountt);
+                            intent.putExtra("gcPic", photoUri);
+                            startActivity(intent);
+                        } else {
                                 // If sign in fails, display a message to the user.
                                 Log.w(TAG, "signInWithCredential:failure", task.getException());
 //                            updateUI(null);
@@ -237,14 +248,14 @@ public class signup extends AppCompatActivity {
 
     }
 
-    @Override
+ /*   @Override
     protected void onStart() {
         super.onStart();
         if (mAuth.getCurrentUser() != null) {
-            startActivity(new Intent(this, Home.class));
+            startActivity(new Intent(this, GcHome.class));
             finish();
 
         }
-    }
+    }*/
 }
 
