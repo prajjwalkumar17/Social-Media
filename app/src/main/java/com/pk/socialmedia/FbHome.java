@@ -29,6 +29,7 @@ public class FbHome extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         imageView2 = findViewById(R.id.imageView2);
         textView4 = findViewById(R.id.textView4);
+
         textView3 = findViewById(R.id.textView3);
         Logoutbot = findViewById(R.id.Logoutbot);
         Intent intent = getIntent();
